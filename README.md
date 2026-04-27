@@ -1,93 +1,113 @@
 # gh-proxy
 
-## 简介
+一个面向自部署的 GitHub 资源代理与加速项目，支持：
 
-github release、archive以及项目文件的加速项目，支持clone，有Cloudflare Workers无服务器版本以及Python版本
+- release 文件下载
+- archive 源码包下载
+- blob/raw 文件访问
+- gist 原始文件访问
+- 部分 `git clone` / `info/refs` 请求转发
+- Cloudflare Workers 部署
+- Python 3.11+ 自部署
+- **短路径访问**：`/owner/repo/...`
 
-## 演示
+> 当前仓库已不再只是上游 fork 的镜像副本，已经加入了面向自部署场景的整理与增强，包括短路径支持、Python 3.11+ 运行栈、本地静态首页等改造。
 
-[https://gh.api.99988866.xyz/](https://gh.api.99988866.xyz/)
+## 特性
 
-演示站为公共服务，如有大规模使用需求请自行部署，演示站有点不堪重负
+### 1. 两种访问格式
 
-![imagea272c95887343279.png](https://img.maocdn.cn/img/2021/04/24/imagea272c95887343279.png)
+#### 完整 URL 格式
+```text
+https://your-proxy.com/https://github.com/owner/repo/releases/download/v1.0.0/file.zip
+```
 
-当然也欢迎[捐赠](#捐赠)以支持作者
+#### 简短路径格式
+```text
+https://your-proxy.com/owner/repo/releases/download/v1.0.0/file.zip
+```
 
-## python版本和cf worker版本差异
+同样适用于：
 
-- python版本支持进行文件大小限制，超过设定返回原地址 [issue #8](https://github.com/hunshcn/gh-proxy/issues/8)
+- `archive/...`
+- `blob/...`
+- `raw/...`
+- `info/refs?...`
+- `git-*`
 
-- python版本支持特定user/repo 封禁/白名单 以及passby [issue #41](https://github.com/hunshcn/gh-proxy/issues/41)
+### 2. 支持的资源类型
 
-## 使用
+- GitHub release 文件
+- GitHub release/archive 源码包
+- GitHub blob/raw 文件
+- `raw.githubusercontent.com`
+- `gist.githubusercontent.com`
+- `git clone` 相关请求的一部分代理路径
 
-直接在copy出来的url前加`https://gh.api.99988866.xyz/`即可
+### 3. Python 版增强
 
-也可以直接访问，在input输入
+相比 Worker 版，Python 版额外支持：
 
-***大量使用请自行部署，以上域名仅为演示使用。***
+- 文件大小限制
+- 白名单 / 黑名单 / pass_list
+- 自定义服务器部署
+- 本地静态首页与 favicon
 
-现在同时支持两种路径格式：
+---
 
-1. 完整 URL 格式（兼容旧用法）
-   - `https://your-proxy.com/https://github.com/owner/repo/releases/download/v1/a.zip`
+## 快速开始
 
-2. 简短 GitHub 路径格式（新增）
-   - `https://your-proxy.com/owner/repo/releases/download/v1/a.zip`
-   - `https://your-proxy.com/owner/repo/archive/master.zip`
-   - `https://your-proxy.com/owner/repo/blob/master/README.md`
-   - `https://your-proxy.com/owner/repo/info/refs?service=git-upload-pack`
+## Cloudflare Workers 部署
 
-访问私有仓库可以通过
+适合：
+- 轻量使用
+- 不想养后端服务器
+- 想快速上线一个边缘代理
 
-`git clone https://user:TOKEN@ghproxy.com/https://github.com/xxxx/xxxx` [#71](https://github.com/hunshcn/gh-proxy/issues/71)
+### 步骤
+1. 打开 Cloudflare Workers
+2. 新建 Worker
+3. 将仓库中的 `index.js` 内容粘贴进去
+4. 保存并部署
+5. 绑定你的自定义域名（可选）
 
-以下都是合法输入（仅示例，文件不存在）：
+### 关键配置
 
-- 分支源码：https://github.com/hunshcn/project/archive/master.zip
+#### `ASSET_URL`
+静态首页资源地址。
 
-- release源码：https://github.com/hunshcn/project/archive/v0.1.0.tar.gz
+#### `PREFIX`
+路径前缀，默认是 `/`。
 
-- release文件：https://github.com/hunshcn/project/releases/download/v0.1.0/example.zip
+如果你的路由挂在：
+```text
+https://example.com/gh/*
+```
+则应设置：
+```js
+const PREFIX = '/gh/'
+```
 
-- 分支文件：https://github.com/hunshcn/project/blob/master/filename
+---
 
-- commit文件：https://github.com/hunshcn/project/blob/1111111111111111111111111111/filename
+## Python 版本部署
 
-- gist：https://gist.githubusercontent.com/cielpy/351557e6e465c12986419ac5a4dd2568/raw/cmd.py
+适合：
+- 自建服务器
+- 需要更强控制能力
+- 需要白名单 / 黑名单 / 大小限制
 
-## cf worker版本部署
-
-首页：https://workers.cloudflare.com
-
-注册，登陆，`Start building`，取一个子域名，`Create a Worker`。
-
-复制 [index.js](https://cdn.jsdelivr.net/gh/hunshcn/gh-proxy@master/index.js)  到左侧代码框，`Save and deploy`。如果正常，右侧应显示首页。
-
-`ASSET_URL`是静态资源的url（实际上就是现在显示出来的那个输入框单页面）
-
-`PREFIX`是前缀，默认（根路径情况为"/"），如果自定义路由为example.com/gh/*，请将PREFIX改为 '/gh/'，注意，少一个杠都会错！
-
-## Python版本部署
-
-### Docker部署（Python 3.11+）
+### Docker 部署（Python 3.11+）
 
 ```bash
 docker build -t gh-proxy-py:py311 .
-docker run -d --name="gh-proxy-py" \
+docker run -d --name gh-proxy-py \
   -p 0.0.0.0:80:80 \
   --restart=always \
   gh-proxy-py:py311
 ```
 
-第一个80是你要暴露出去的端口。
-
-当前 Docker 方案已适配 **Python 3.11+**，容器内使用 `gunicorn` 运行，不再依赖旧的 `python3.7 + uwsgi-nginx` 基础镜像，也不再需要历史遗留的 `entrypoint.sh` / `uwsgi.ini`。
-
-### 直接部署
-
-安装依赖（请使用python3.11+）
+### 直接运行
 
 ```bash
 pip install -r requirements.txt
@@ -95,42 +115,91 @@ cd app
 gunicorn --bind 127.0.0.1:8000 main:app
 ```
 
-按需求修改`app/main.py`的前几项配置
+### Python 版说明
 
-*注意:* 如遇上游返回头兼容问题，可能仍需要在 `return Response` 前处理特定响应头，例如：
-```python
-if 'Transfer-Encoding' in headers:
-    headers.pop('Transfer-Encoding')
+当前 Python 运行栈已调整为：
+- Python 3.11+
+- Flask 3.x
+- Gunicorn
+
+已移除旧的：
+- `python3.7 + uwsgi-nginx`
+- `entrypoint.sh`
+- `uwsgi.ini`
+
+---
+
+## Web UI
+
+Python 版首页现在使用仓库内置静态资源：
+
+- `app/static/index.html`
+- `app/static/favicon.ico`
+
+这意味着：
+- 服务启动不再依赖外网拉首页
+- 你可以直接修改本地 HTML 做定制
+
+---
+
+## 使用示例
+
+### release 文件
+```text
+https://your-proxy.com/owner/repo/releases/download/v1.0.0/example.zip
 ```
 
-### 注意
+### archive 源码包
+```text
+https://your-proxy.com/owner/repo/archive/master.zip
+```
 
-python版本的机器如果无法正常访问github.io会启动报错，请自行修改静态文件url
+### blob 文件
+```text
+https://your-proxy.com/owner/repo/blob/master/README.md
+```
 
-python版本默认走服务器（2021.3.27更新）
+### 私有仓库 clone
+```text
+git clone https://user:TOKEN@your-proxy.com/https://github.com/owner/private-repo
+```
 
-## Cloudflare Workers计费
+---
 
-到 `overview` 页面可参看使用情况。免费版每天有 10 万次免费请求，并且有每分钟1000次请求的限制。
+## 兼容性说明
 
-如果不够用，可升级到 $5 的高级版本，每月可用 1000 万次请求（超出部分 $0.5/百万次请求）。
+### Worker 版
+- 适合轻量代理
+- 逻辑简单
+- 部署快
 
-## Changelog
+### Python 版
+- 适合长期自部署
+- 控制能力更强
+- 更适合做私有或小范围公共服务
 
-* 2020.04.10 增加对`raw.githubusercontent.com`文件的支持
-* 2020.04.09 增加Python版本（使用Flask）
-* 2020.03.23 新增了clone的支持
-* 2020.03.22 初始版本
+---
 
-## 链接
+## 已完成的本仓库改造
 
-[我的博客](https://hunsh.net)
+- 增加短路径支持：`/owner/repo/...`
+- Python 3.11+ 适配
+- Docker 运行栈现代化
+- `gunicorn` 替代旧 `uwsgi-nginx`
+- 首页静态资源本地化
+- 删除废弃部署文件
+- README 重写
 
-## 参考
+---
 
-[jsproxy](https://github.com/EtherDream/jsproxy/)
+## 注意事项
 
-## 捐赠
+- 大流量公共使用请自行加限流、缓存和鉴权
+- 代理服务天然存在被滥用风险，不建议裸奔公网长期开放
+- 如需自定义首页，可直接修改 `app/static/index.html`
 
-![wx.png](https://img.maocdn.cn/img/2021/04/24/image.md.png)
-![ali.png](https://www.helloimg.com/images/2021/04/24/BK9vmb.md.png)
+---
+
+## License
+
+MIT

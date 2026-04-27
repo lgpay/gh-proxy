@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>gh-proxy</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(17, 24, 39, 0.82);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --input: rgba(255, 255, 255, 0.06);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --code: rgba(255, 255, 255, 0.06);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 28%),
+        linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 20px 72px;
+    }
+
+    .hero {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 32px;
+      backdrop-filter: blur(16px);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 8px 12px;
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.03);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.05;
+      margin: 0 0 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin: 24px 0 16px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--input-border);
+      background: var(--input);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 0 22px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #04111b;
+      background: linear-gradient(135deg, var(--accent), #86efac);
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      margin: 0 0 12px;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    code {
+      display: block;
+      background: var(--code);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #dbeafe;
+      overflow-x: auto;
+      line-height: 1.5;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 24px 14px 40px; }
+      .hero { padding: 20px; border-radius: 18px; }
+      form { grid-template-columns: 1fr; }
+      button { height: 50px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script>
+    function normalizeInput(value) {
+      const v = value.trim();
+      if (!v) return '';
+      return v;
+    }
+
+    function toSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('target');
+      const value = normalizeInput(input.value);
+      if (!value) return false;
+      const base = location.href.substring(0, location.href.lastIndexOf('/') + 1);
+      window.open(base + value, '_blank', 'noopener');
+      return false;
+    }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="badge">gh-proxy · GitHub 资源代理 / 加速</div>
+      <h1>更短的 GitHub 代理路径，
+        <br>更干净的自部署体验。</h1>
+      <p class="subtitle">
+        支持 release、archive、blob/raw、gist，以及简短路径格式：
+        <strong>/owner/repo/...</strong>。
+        适合自部署到 Cloudflare Workers 或 Python 3.11+ 服务端。
+      </p>
+
+      <form onsubmit="toSubmit(event)">
+        <input
+          id="target"
+          type="text"
+          placeholder="输入 GitHub 完整链接，或 owner/repo/releases/... 这样的短路径"
+          required>
+        <button type="submit">打开 / 代理</button>
+      </form>
+
+      <p class="hint">
+        支持两种输入：完整 GitHub URL，或简短仓库路径。示例见下方。
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <h2>示例：短路径</h2>
+          <code>owner/repo/releases/download/v1.0.0/file.zip</code>
+          <code>owner/repo/archive/master.zip</code>
+          <code>owner/repo/blob/master/README.md</code>
+        </div>
+        <div class="card">
+          <h2>示例：完整链接</h2>
+          <code>https://github.com/owner/repo/releases/download/v1.0.0/file.zip</code>
+          <code>https://github.com/owner/repo/archive/master.zip</code>
+          <code>https://gist.githubusercontent.com/user/id/raw/file.txt</code>
+        </div>
+        <div class="card">
+          <h2>支持内容</h2>
+          <ul>
+            <li>release 文件</li>
+            <li>archive 源码包</li>
+            <li>blob/raw 文件</li>
+            <li>gist 原始文件</li>
+            <li>部分 git clone / info refs</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>部署形态</h2>
+          <ul>
+            <li>Cloudflare Workers</li>
+            <li>Python 3.11+ + Gunicorn</li>
+            <li>自定义域名反代</li>
+            <li>适合私有或小范围公共服务</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      查看项目说明：<a href="https://github.com/lgpay/gh-proxy" target="_blank" rel="noopener">lgpay/gh-proxy</a>
+    </div>
+  </div>
+</body>
+</html>
