@@ -30,6 +30,7 @@ const exp3 = /^(?:https?:\/\/)?github\.com\/.+?\/.+?\/(?:info|git-).*$/i
 const exp4 = /^(?:https?:\/\/)?raw\.(?:githubusercontent|github)\.com\/.+?\/.+?\/.+?\/.+$/i
 const exp5 = /^(?:https?:\/\/)?gist\.(?:githubusercontent|github)\.com\/.+?\/.+?\/.+$/i
 const exp6 = /^(?:https?:\/\/)?github\.com\/.+?\/.+?\/tags.*$/i
+const expShort = /^(?!https?:\/\/)(?!raw\.(?:githubusercontent|github)\.com\/)(?!gist\.(?:githubusercontent|github)\.com\/)(?!github\.com\/)(?!cdn\.jsdelivr\.net\/)([^/?#]+\/[^/?#]+\/(?:releases|archive|blob|raw)\/.*|[^/?#]+\/[^/?#]+\/(?:info|git-).*)$/i
 
 /**
  * @param {any} body
@@ -51,6 +52,17 @@ function newUrl(urlStr) {
     } catch (err) {
         return null
     }
+}
+
+
+function normalizeTarget(path) {
+    if (!path) {
+        return path
+    }
+    if (path.search(expShort) === 0) {
+        return 'https://github.com/' + path
+    }
+    return path
 }
 
 
@@ -83,6 +95,7 @@ async function fetchHandler(e) {
     }
     // cfworker 会把路径中的 `//` 合并成 `/`
     path = urlObj.href.substr(urlObj.origin.length + PREFIX.length).replace(/^https?:\/+/, 'https://')
+    path = normalizeTarget(path)
     if (path.search(exp1) === 0 || path.search(exp5) === 0 || path.search(exp6) === 0 || path.search(exp3) === 0 || path.search(exp4) === 0) {
         return httpHandler(req, path)
     } else if (path.search(exp2) === 0) {

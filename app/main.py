@@ -48,6 +48,7 @@ exp2 = re.compile(r'^(?:https?://)?github\.com/(?P<author>.+?)/(?P<repo>.+?)/(?:
 exp3 = re.compile(r'^(?:https?://)?github\.com/(?P<author>.+?)/(?P<repo>.+?)/(?:info|git-).*$')
 exp4 = re.compile(r'^(?:https?://)?raw\.(?:githubusercontent|github)\.com/(?P<author>.+?)/(?P<repo>.+?)/.+?/.+$')
 exp5 = re.compile(r'^(?:https?://)?gist\.(?:githubusercontent|github)\.com/(?P<author>.+?)/.+?/.+$')
+exp_short = re.compile(r'^(?!https?://)(?!raw\.(?:githubusercontent|github)\.com/)(?!gist\.(?:githubusercontent|github)\.com/)(?!github\.com/)(?!cdn\.jsdelivr\.net/)(.+?/.+?/(?:releases|archive|blob|raw)/.*|.+?/.+?/(?:info|git-).*)$')
 
 requests.sessions.default_headers = lambda: CaseInsensitiveDict()
 
@@ -62,6 +63,12 @@ def index():
 @app.route('/favicon.ico')
 def icon():
     return Response(icon_r, content_type='image/vnd.microsoft.icon')
+
+
+def normalize_target(u):
+    if exp_short.match(u):
+        return 'https://github.com/' + u
+    return u
 
 
 def iter_content(self, chunk_size=1, decode_unicode=False):
@@ -116,6 +123,7 @@ def check_url(u):
 
 @app.route('/<path:u>', methods=['GET', 'POST'])
 def handler(u):
+    u = normalize_target(u)
     u = u if u.startswith('http') else 'https://' + u
     if u.rfind('://', 3, 9) == -1:
         u = u.replace('s:/', 's://', 1)  # uwsgi会将//传递为/

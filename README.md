@@ -28,6 +28,17 @@ github release、archive以及项目文件的加速项目，支持clone，有Clo
 
 ***大量使用请自行部署，以上域名仅为演示使用。***
 
+现在同时支持两种路径格式：
+
+1. 完整 URL 格式（兼容旧用法）
+   - `https://your-proxy.com/https://github.com/owner/repo/releases/download/v1/a.zip`
+
+2. 简短 GitHub 路径格式（新增）
+   - `https://your-proxy.com/owner/repo/releases/download/v1/a.zip`
+   - `https://your-proxy.com/owner/repo/archive/master.zip`
+   - `https://your-proxy.com/owner/repo/blob/master/README.md`
+   - `https://your-proxy.com/owner/repo/info/refs?service=git-upload-pack`
+
 访问私有仓库可以通过
 
 `git clone https://user:TOKEN@ghproxy.com/https://github.com/xxxx/xxxx` [#71](https://github.com/hunshcn/gh-proxy/issues/71)
@@ -60,27 +71,34 @@ github release、archive以及项目文件的加速项目，支持clone，有Clo
 
 ## Python版本部署
 
-### Docker部署
+### Docker部署（Python 3.11+）
 
-```
+```bash
+docker build -t gh-proxy-py:py311 .
 docker run -d --name="gh-proxy-py" \
   -p 0.0.0.0:80:80 \
   --restart=always \
-  hunsh/gh-proxy-py:latest
+  gh-proxy-py:py311
 ```
 
-第一个80是你要暴露出去的端口
+第一个80是你要暴露出去的端口。
+
+当前 Docker 方案已适配 **Python 3.11+**，容器内使用 `gunicorn` 运行，不再依赖旧的 `python3.7 + uwsgi-nginx` 基础镜像。
 
 ### 直接部署
 
-安装依赖（请使用python3）
+安装依赖（请使用python3.11+）
 
-```pip install flask requests```
+```bash
+pip install -r requirements.txt
+cd app
+gunicorn --bind 127.0.0.1:8000 main:app
+```
 
 按需求修改`app/main.py`的前几项配置
 
-*注意:* 可能需要在`return Response`前加两行
-```python3
+*注意:* 如遇上游返回头兼容问题，可能仍需要在 `return Response` 前处理特定响应头，例如：
+```python
 if 'Transfer-Encoding' in headers:
     headers.pop('Transfer-Encoding')
 ```
