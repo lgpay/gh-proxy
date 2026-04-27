@@ -83,7 +83,7 @@ docker run -d --name="gh-proxy-py" \
 
 第一个80是你要暴露出去的端口。
 
-当前 Docker 方案已适配 **Python 3.11+**，容器内使用 `gunicorn` 运行，不再依赖旧的 `python3.7 + uwsgi-nginx` 基础镜像。
+当前 Docker 方案已适配 **Python 3.11+**，容器内使用 `gunicorn` 运行，不再依赖旧的 `python3.7 + uwsgi-nginx` 基础镜像，也不再需要历史遗留的 `entrypoint.sh` / `uwsgi.ini`。
 
 ### 直接部署
 
