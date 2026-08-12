@@ -1,3 +1,4 @@
 name = "gh-proxy"
 main = "index.js"
 compatibility_date = "2024-01-08"
+account_id = "7f1b4c39c4eab47d6b1691189f43d08a"
