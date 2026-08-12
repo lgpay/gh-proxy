@@ -1,0 +1,5 @@
+# wrangler 本地状态
+.wrangler/
+
+# 依赖（若改用 npm 工作流）
+node_modules/
