@@ -1,0 +1,11 @@
+name = "gh-proxy"
+main = "index.js"
+compatibility_date = "2024-01-08"
+
+# Cloudflare 账号 ID（本地 `wrangler deploy` 需要；在 Cloudflare 控制台
+# 用「连接到 Git 仓库」部署时，会自动使用当前登录的账号，可不依赖此值）
+account_id = "7f1b4c39c4eab47d6b1691189f43d08a"
+
+# 该 Worker 为纯单文件脚本，无构建步骤。
+# 在 Cloudflare 控制台创建/连接 Worker 并选择本仓库后，
+# 平台会读取此文件，直接部署 index.js，无需 npm 构建。
