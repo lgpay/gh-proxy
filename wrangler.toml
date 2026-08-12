@@ -9,16 +9,5 @@ account_id = "7f1b4c39c4eab47d6b1691189f43d08a"
 # 该 Worker 为纯单文件脚本，无构建步骤。
 # 在 Cloudflare 控制台创建/连接 Worker 并选择本仓库后，
 # 平台会读取此文件，直接部署 index.js，无需 npm 构建。
-
-# ---- 运行时配置（注入为 Worker 的 env，代码中通过 env.XXX 读取，不再硬编码）----
-[vars]
-# 静态首页资源地址（404.html / sw.js 等）
-ASSET_URL = "https://lgpay.github.io/gh-proxy/"
-# 路径前缀：默认 '/'，自定义路由 example.com/gh/* 时改为 '/gh/'
-PREFIX = "/"
-# 白名单：路径包含其中字符才放行，如 ["/username/"]；空数组 = 放行全部
-whiteList = []
-
-# 分支文件走 jsDelivr 镜像的开关，0 = 关闭
-[vars.Config]
-jsdelivr = 0
+# 注：静态资源地址（ASSET_URL）等配置硬编码在 index.js 中，
+# 指向 https://raw.githubusercontent.com/lgpay/gh-proxy/gh-pages/ 的 gh-pages 分支。

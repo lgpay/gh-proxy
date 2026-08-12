@@ -2,13 +2,16 @@
 
 /**
  * static files (404.html, sw.js, conf.js)
- *
- * 以下配置项通过 wrangler.toml 的 [vars] 注入，运行时在 fetch(request, env) 的 env 中读取：
- *   ASSET_URL   静态首页资源地址，如 404.html / sw.js
- *   PREFIX      路径前缀，默认 '/'；自定义路由 example.com/gh/* 时改为 '/gh/'
- *   Config      { jsdelivr } 分支文件走 jsDelivr 镜像的开关，0 关闭
- *   whiteList   白名单，路径包含其中字符才通过，如 ['/username/']；空数组 = 放行全部
  */
+const ASSET_URL = 'https://raw.githubusercontent.com/lgpay/gh-proxy/gh-pages/'
+// 前缀，如果自定义路由为example.com/gh/*，将PREFIX改为 '/gh/'，注意，少一个杠都会错！
+const PREFIX = '/'
+// 分支文件使用jsDelivr镜像的开关，0为关闭，默认关闭
+const Config = {
+    jsdelivr: 0
+}
+
+const whiteList = [] // 白名单，路径里面有包含字符的才会通过，e.g. ['/username/']
 
 /** @type {ResponseInit} */
 const PREFLIGHT_INIT = {
@@ -63,12 +66,11 @@ function normalizeTarget(path) {
 }
 
 
-export default {
-    async fetch(request, env) {
-        return fetchHandler(request, env)
-            .catch(err => makeRes('cfworker error:\n' + err.stack, 502))
-    }
-}
+addEventListener('fetch', e => {
+    const ret = fetchHandler(e)
+        .catch(err => makeRes('cfworker error:\n' + err.stack, 502))
+    e.respondWith(ret)
+})
 
 
 function checkUrl(u) {
@@ -81,35 +83,34 @@ function checkUrl(u) {
 }
 
 /**
- * @param {Request} request
- * @param {Object} env wrangler.toml 注入的 [vars]
+ * @param {FetchEvent} e
  */
-async function fetchHandler(request, env) {
-    const req = request
+async function fetchHandler(e) {
+    const req = e.request
     const urlStr = req.url
     const urlObj = new URL(urlStr)
     let path = urlObj.searchParams.get('q')
     if (path) {
-        return Response.redirect('https://' + urlObj.host + env.PREFIX + path, 301)
+        return Response.redirect('https://' + urlObj.host + PREFIX + path, 301)
     }
     // cfworker 会把路径中的 `//` 合并成 `/`
-    path = urlObj.href.substr(urlObj.origin.length + env.PREFIX.length).replace(/^https?:\/+/, 'https://')
+    path = urlObj.href.substr(urlObj.origin.length + PREFIX.length).replace(/^https?:\/+/, 'https://')
     path = normalizeTarget(path)
     if (path.search(exp1) === 0 || path.search(exp5) === 0 || path.search(exp6) === 0 || path.search(exp3) === 0 || path.search(exp4) === 0) {
-        return httpHandler(req, path, env)
+        return httpHandler(req, path)
     } else if (path.search(exp2) === 0) {
-        if (env.Config.jsdelivr) {
+        if (Config.jsdelivr) {
             const newUrl = path.replace('/blob/', '@').replace(/^(?:https?:\/\/)?github\.com/, 'https://cdn.jsdelivr.net/gh')
             return Response.redirect(newUrl, 302)
         } else {
             path = path.replace('/blob/', '/raw/')
-            return httpHandler(req, path, env)
+            return httpHandler(req, path)
         }
     } else if (path.search(exp4) === 0) {
         const newUrl = path.replace(/(?<=com\/.+?\/.+?)\/(.+?\/)/, '@$1').replace(/^(?:https?:\/\/)?raw\.(?:githubusercontent|github)\.com/, 'https://cdn.jsdelivr.net/gh')
         return Response.redirect(newUrl, 302)
     } else {
-        return fetch(env.ASSET_URL + path)
+        return fetch(ASSET_URL + path)
     }
 }
 
@@ -117,9 +118,8 @@ async function fetchHandler(request, env) {
 /**
  * @param {Request} req
  * @param {string} pathname
- * @param {Object} env
  */
-function httpHandler(req, pathname, env) {
+function httpHandler(req, pathname) {
     const reqHdrRaw = req.headers
 
     // preflight
@@ -131,7 +131,6 @@ function httpHandler(req, pathname, env) {
 
     const reqHdrNew = new Headers(reqHdrRaw)
 
-    const whiteList = env.whiteList || []
     let urlStr = pathname
     let flag = !Boolean(whiteList.length)
     for (let i of whiteList) {
@@ -155,7 +154,7 @@ function httpHandler(req, pathname, env) {
         redirect: 'manual',
         body: req.body
     }
-    return proxy(urlObj, reqInit, env)
+    return proxy(urlObj, reqInit)
 }
 
 
@@ -163,9 +162,8 @@ function httpHandler(req, pathname, env) {
  *
  * @param {URL} urlObj
  * @param {RequestInit} reqInit
- * @param {Object} env
  */
-async function proxy(urlObj, reqInit, env) {
+async function proxy(urlObj, reqInit) {
     const res = await fetch(urlObj.href, reqInit)
     const resHdrOld = res.headers
     const resHdrNew = new Headers(resHdrOld)
@@ -175,10 +173,10 @@ async function proxy(urlObj, reqInit, env) {
     if (resHdrNew.has('location')) {
         let _location = resHdrNew.get('location')
         if (checkUrl(_location))
-            resHdrNew.set('location', env.PREFIX + _location)
+            resHdrNew.set('location', PREFIX + _location)
         else {
             reqInit.redirect = 'follow'
-            return proxy(newUrl(_location), reqInit, env)
+            return proxy(newUrl(_location), reqInit)
         }
     }
     resHdrNew.set('access-control-expose-headers', '*')
@@ -193,3 +191,4 @@ async function proxy(urlObj, reqInit, env) {
         headers: resHdrNew,
     })
 }
+
