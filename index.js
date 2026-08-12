@@ -66,13 +66,6 @@ function normalizeTarget(path) {
 }
 
 
-addEventListener('fetch', e => {
-    const ret = fetchHandler(e)
-        .catch(err => makeRes('cfworker error:\n' + err.stack, 502))
-    e.respondWith(ret)
-})
-
-
 function checkUrl(u) {
     for (let i of [exp1, exp2, exp3, exp4, exp5, exp6]) {
         if (u.search(i) === 0) {
@@ -82,33 +75,30 @@ function checkUrl(u) {
     return false
 }
 
+
 /**
- * @param {FetchEvent} e
+ * @param {Request} request
  */
-async function fetchHandler(e) {
-    const req = e.request
-    const urlStr = req.url
+async function fetchHandler(request) {
+    const urlStr = request.url
     const urlObj = new URL(urlStr)
     let path = urlObj.searchParams.get('q')
     if (path) {
         return Response.redirect('https://' + urlObj.host + PREFIX + path, 301)
     }
     // cfworker 会把路径中的 `//` 合并成 `/`
-    path = urlObj.href.substr(urlObj.origin.length + PREFIX.length).replace(/^https?:\/+/, 'https://')
+    path = urlObj.href.slice(urlObj.origin.length + PREFIX.length).replace(/^https?:\/+/, 'https://')
     path = normalizeTarget(path)
     if (path.search(exp1) === 0 || path.search(exp5) === 0 || path.search(exp6) === 0 || path.search(exp3) === 0 || path.search(exp4) === 0) {
-        return httpHandler(req, path)
+        return httpHandler(request, path)
     } else if (path.search(exp2) === 0) {
         if (Config.jsdelivr) {
             const newUrl = path.replace('/blob/', '@').replace(/^(?:https?:\/\/)?github\.com/, 'https://cdn.jsdelivr.net/gh')
             return Response.redirect(newUrl, 302)
         } else {
             path = path.replace('/blob/', '/raw/')
-            return httpHandler(req, path)
+            return httpHandler(request, path)
         }
-    } else if (path.search(exp4) === 0) {
-        const newUrl = path.replace(/(?<=com\/.+?\/.+?)\/(.+?\/)/, '@$1').replace(/^(?:https?:\/\/)?raw\.(?:githubusercontent|github)\.com/, 'https://cdn.jsdelivr.net/gh')
-        return Response.redirect(newUrl, 302)
     } else {
         return fetch(ASSET_URL + path)
     }
@@ -190,4 +180,15 @@ async function proxy(urlObj, reqInit) {
         status,
         headers: resHdrNew,
     })
+}
+
+
+export default {
+    async fetch(request) {
+        try {
+            return await fetchHandler(request)
+        } catch (err) {
+            return makeRes('cfworker error:\n' + err.stack, 502)
+        }
+    }
 }
