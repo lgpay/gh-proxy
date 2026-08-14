@@ -57,12 +57,9 @@
       font-size: 15px;
     }
 
-    .scope { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-
     .hero { max-width: none; }
-    .eyebrow { margin: 0 0 10px; color: var(--accent-dark); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { max-width: none; margin: 0; font-size: 48px; line-height: 1.04; letter-spacing: 0; white-space: nowrap; }
-    .desc { max-width: 740px; margin: 12px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+    h1 { max-width: none; margin: 0; font-size: 44px; line-height: 1.04; letter-spacing: 0; white-space: nowrap; }
+    .desc { max-width: 740px; margin: 10px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
 
     .tool { margin-top: 24px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
     form { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
@@ -76,11 +73,8 @@
     .primary:hover { background: var(--accent-dark); }
     .ghost { color: var(--ink); background: transparent; border-color: var(--line); }
     .ghost:hover { background: var(--mint); }
-    .hint { margin: 8px 8px 3px; color: var(--muted); font-size: 12px; }
-
     .section-head { display: flex; align-items: baseline; justify-content: flex-start; gap: 12px; margin: 32px 0 12px; }
     .section-head h2 { margin: 0; font-size: 18px; }
-    .section-head p { margin: 0; padding-left: 12px; color: var(--muted); border-left: 1px solid var(--line); font-size: 13px; }
     .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .card { min-width: 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
     .card h3 { margin: 0 0 9px; font-size: 14px; }
@@ -100,14 +94,12 @@
     @media (max-width: 720px) {
       .wrap { width: min(100% - 28px, 560px); padding-top: 20px; }
       .topbar { margin-bottom: 42px; }
-      h1 { font-size: 42px; white-space: normal; }
-      .scope { display: none; }
+      h1 { font-size: 40px; white-space: normal; }
       form { grid-template-columns: 1fr; }
       button { width: 100%; }
       .grid { grid-template-columns: 1fr; }
       .examples { grid-column: auto; }
       .section-head { display: block; margin-top: 44px; }
-      .section-head p { margin-top: 6px; padding-left: 0; border-left: 0; }
       .footer { display: block; line-height: 1.8; }
     }
   </style>
@@ -172,34 +164,30 @@
           <span class="brand-mark">↗</span>
           <span>gh-proxy</span>
         </a>
-        <div class="scope">Release / Archive / Raw</div>
       </div>
 
       <section class="hero">
-        <p class="eyebrow">GitHub 资源代理</p>
-        <h1>让 GitHub 资源下载更简单。</h1>
+        <h1>GitHub 资源代理</h1>
       <p class="desc">
-        输入 GitHub 资源链接，生成当前代理地址并直接访问。支持 Release 文件、源码归档、仓库文件和 Gist 原始内容。
+        支持 Release、Archive、Raw 和 Gist。
       </p>
 
       <div class="tool">
         <form onsubmit="toSubmit(event)">
           <input id="target" type="text" placeholder="粘贴 GitHub 链接，或输入 owner/repo/..." autocomplete="url" aria-label="GitHub 资源链接" required>
-          <button class="primary" type="submit">立即访问</button>
-          <button class="ghost" type="button" onclick="copyLink()">复制代理地址</button>
+          <button class="primary" type="submit">打开</button>
+          <button class="ghost" type="button" onclick="copyLink()">复制</button>
         </form>
-        <div class="hint">访问会在新标签页打开；复制后可将代理地址用于浏览器、脚本或下载工具。</div>
       </div>
       </section>
 
       <div class="section-head">
-        <h2>输入示例</h2>
-        <p>点击任意示例，快速开始</p>
+        <h2>示例</h2>
       </div>
 
       <div class="grid">
         <div class="card examples">
-          <h3>短路径写法</h3>
+          <h3>短路径</h3>
           <code onclick="useExample(this)">owner/repo/releases/download/v1.0.0/file.zip</code>
           <code onclick="useExample(this)">owner/repo/archive/master.zip</code>
           <code onclick="useExample(this)">owner/repo/blob/master/README.md</code>
@@ -210,7 +198,7 @@
           <code onclick="useExample(this)">https://github.com/owner/repo/archive/master.zip</code>
         </div>
         <div class="card">
-          <h3>可代理资源</h3>
+          <h3>资源类型</h3>
           <ul>
             <li>release 文件</li>
             <li>archive 源码包</li>
@@ -219,7 +207,7 @@
           </ul>
         </div>
         <div class="card">
-          <h3>适用部署</h3>
+          <h3>部署</h3>
           <ul>
             <li>Cloudflare Workers</li>
             <li>Python 3.11+</li>
@@ -229,8 +217,7 @@
       </div>
 
       <div class="footer">
-        <span>面向自部署的 GitHub 资源代理</span>
-        <span>查看源码：<a href="https://github.com/lgpay/gh-proxy" target="_blank" rel="noopener">lgpay/gh-proxy ↗</a></span>
+        <span><a href="https://github.com/lgpay/gh-proxy" target="_blank" rel="noopener">lgpay/gh-proxy ↗</a></span>
       </div>
     </section>
   </div>
