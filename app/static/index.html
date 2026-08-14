@@ -34,7 +34,7 @@
     .wrap {
       width: min(920px, calc(100% - 36px));
       margin: 0 auto;
-      padding: 20px 0 24px;
+      padding: 24px 0 28px;
     }
 
     .topbar {
@@ -42,28 +42,27 @@
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      margin-bottom: 38px;
+      margin-bottom: 30px;
     }
 
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .01em; }
     .brand-mark {
       display: grid;
       place-items: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       color: #fff;
       background: var(--ink);
       font-size: 15px;
     }
 
-    .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3a9d62; box-shadow: 0 0 0 4px #d9eddf; }
+    .scope { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 
     .hero { max-width: none; }
-    .eyebrow { margin: 0 0 14px; color: var(--accent-dark); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow { margin: 0 0 10px; color: var(--accent-dark); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
     h1 { max-width: none; margin: 0; font-size: 48px; line-height: 1.04; letter-spacing: 0; white-space: nowrap; }
-    .desc { max-width: 620px; margin: 14px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+    .desc { max-width: 740px; margin: 12px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
 
     .tool { margin-top: 24px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
     form { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
@@ -79,11 +78,11 @@
     .ghost:hover { background: var(--mint); }
     .hint { margin: 8px 8px 3px; color: var(--muted); font-size: 12px; }
 
-    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 38px 0 12px; }
+    .section-head { display: flex; align-items: baseline; justify-content: flex-start; gap: 12px; margin: 32px 0 12px; }
     .section-head h2 { margin: 0; font-size: 18px; }
-    .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .section-head p { margin: 0; padding-left: 12px; color: var(--muted); border-left: 1px solid var(--line); font-size: 13px; }
     .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .card { min-width: 0; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
+    .card { min-width: 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
     .card h3 { margin: 0 0 9px; font-size: 14px; }
     .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
     .examples { grid-column: auto; }
@@ -100,16 +99,15 @@
 
     @media (max-width: 720px) {
       .wrap { width: min(100% - 28px, 560px); padding-top: 20px; }
-      .topbar { margin-bottom: 52px; }
+      .topbar { margin-bottom: 42px; }
       h1 { font-size: 42px; white-space: normal; }
-      .status { font-size: 0; }
-      .status-dot { margin-right: 2px; }
+      .scope { display: none; }
       form { grid-template-columns: 1fr; }
       button { width: 100%; }
       .grid { grid-template-columns: 1fr; }
       .examples { grid-column: auto; }
-      .section-head { display: block; margin-top: 54px; }
-      .section-head p { margin-top: 6px; }
+      .section-head { display: block; margin-top: 44px; }
+      .section-head p { margin-top: 6px; padding-left: 0; border-left: 0; }
       .footer { display: block; line-height: 1.8; }
     }
   </style>
@@ -174,7 +172,7 @@
           <span class="brand-mark">↗</span>
           <span>gh-proxy</span>
         </a>
-        <div class="status"><span class="status-dot"></span><span>代理服务在线</span></div>
+        <div class="scope">Release / Archive / Raw</div>
       </div>
 
       <section class="hero">
