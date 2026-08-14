@@ -11,12 +11,13 @@ from requests.utils import (
     stream_decode_response_unicode, iter_slices, CaseInsensitiveDict)
 from urllib3.exceptions import (
     DecodeError, ReadTimeoutError, ProtocolError)
-from urllib.parse import quote
+from urllib.parse import quote, urljoin, urlparse
 
 # config
 # 分支文件使用jsDelivr镜像的开关，0为关闭，默认关闭
 jsdelivr = 0
-size_limit = 1024 * 1024 * 1024 * 999  # 允许的文件大小，默认999GB，相当于无限制了 https://github.com/hunshcn/gh-proxy/issues/8
+size_limit = 1024 * 1024 * 1024  # 1 GiB
+request_timeout = (10, 120)  # connect timeout, read timeout
 
 """
   先生效白名单再匹配黑名单，pass_list匹配到的会直接302到jsdelivr而忽略设置
@@ -54,6 +55,16 @@ exp3 = re.compile(r'^(?:https?://)?github\.com/(?P<author>.+?)/(?P<repo>.+?)/(?:
 exp4 = re.compile(r'^(?:https?://)?raw\.(?:githubusercontent|github)\.com/(?P<author>.+?)/(?P<repo>.+?)/.+?/.+$')
 exp5 = re.compile(r'^(?:https?://)?gist\.(?:githubusercontent|github)\.com/(?P<author>.+?)/.+?/.+$')
 exp_short = re.compile(r'^(?!https?://)(?!raw\.(?:githubusercontent|github)\.com/)(?!gist\.(?:githubusercontent|github)\.com/)(?!github\.com/)(?!cdn\.jsdelivr\.net/)(.+?/.+?/(?:releases|archive|blob|raw)/.*|.+?/.+?/(?:info|git-).*)$')
+
+REDIRECT_HOSTS = {
+    'github.com',
+    'raw.githubusercontent.com',
+    'gist.githubusercontent.com',
+    'codeload.github.com',
+    'objects.githubusercontent.com',
+    'github-releases.githubusercontent.com',
+    'release-assets.githubusercontent.com',
+}
 
 requests.sessions.default_headers = lambda: CaseInsensitiveDict()
 
@@ -126,6 +137,11 @@ def check_url(u):
     return False
 
 
+def is_allowed_redirect(u):
+    parsed = urlparse(u)
+    return parsed.scheme == 'https' and parsed.hostname in REDIRECT_HOSTS
+
+
 @app.route('/<path:u>', methods=['GET', 'POST'])
 def handler(u):
     u = normalize_target(u)
@@ -172,7 +188,9 @@ def handler(u):
         return proxy(u)
 
 
-def proxy(u, allow_redirects=False):
+def proxy(u, allow_redirects=False, redirect_depth=0):
+    if redirect_depth > 5:
+        return Response('Too many redirects.', status=508)
     headers = {}
     r_headers = dict(request.headers)
     if 'Host' in r_headers:
@@ -181,28 +199,34 @@ def proxy(u, allow_redirects=False):
         url = u + request.url.replace(request.base_url, '', 1)
         if url.startswith('https:/') and not url.startswith('https://'):
             url = 'https://' + url[7:]
-        r = requests.request(method=request.method, url=url, data=request.data, headers=r_headers, stream=True, allow_redirects=allow_redirects)
+        r = requests.request(method=request.method, url=url, data=request.data, headers=r_headers, stream=True, allow_redirects=allow_redirects, timeout=request_timeout)
         headers = dict(r.headers)
 
-        if 'Content-length' in r.headers and int(r.headers['Content-length']) > size_limit:
-            return redirect(u + request.url.replace(request.base_url, '', 1))
+        content_length = r.headers.get('Content-Length')
+        if content_length and int(content_length) > size_limit:
+            return Response('Response too large.', status=413)
 
         def generate():
+            total = 0
             for chunk in iter_content(r, chunk_size=CHUNK_SIZE):
+                total += len(chunk)
+                if total > size_limit:
+                    return
                 yield chunk
 
         if 'Location' in r.headers:
             _location = r.headers.get('Location')
-            if check_url(_location):
-                headers['Location'] = '/' + _location
-            else:
-                return proxy(_location, True)
+            redirect_url = urljoin(r.url, _location)
+            if check_url(redirect_url):
+                headers['Location'] = '/' + redirect_url
+            elif is_allowed_redirect(redirect_url):
+                return proxy(redirect_url, True, redirect_depth + 1)
 
         return Response(generate(), headers=headers, status=r.status_code)
-    except Exception as e:
+    except Exception:
         headers['content-type'] = 'text/html; charset=UTF-8'
-        return Response('server error ' + str(e), status=500, headers=headers)
+        return Response('Upstream request failed.', status=502, headers=headers)
 
-app.debug = True
+app.debug = False
 if __name__ == '__main__':
     app.run(host=HOST, port=PORT)

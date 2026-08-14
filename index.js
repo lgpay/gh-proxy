@@ -38,6 +38,16 @@ const PROXY_EXPS = [expReleasesArchive, expInfoGit, expRaw, expGist, expTags]
 
 const expShort = /^(?!https?:\/\/)(?!raw\.(?:githubusercontent|github)\.com\/)(?!gist\.(?:githubusercontent|github)\.com\/)(?!github\.com\/)(?!cdn\.jsdelivr\.net\/)([^/?#]+\/[^/?#]+\/(?:releases|archive|blob|raw)\/.*|[^/?#]+\/[^/?#]+\/(?:info|git-).*)$/i
 
+const REDIRECT_HOSTS = new Set([
+    'github.com',
+    'raw.githubusercontent.com',
+    'gist.githubusercontent.com',
+    'codeload.github.com',
+    'objects.githubusercontent.com',
+    'github-releases.githubusercontent.com',
+    'release-assets.githubusercontent.com',
+])
+
 /**
  * @param {any} body
  * @param {number} status
@@ -80,6 +90,15 @@ function normalizeTarget(path) {
 
 function checkUrl(u) {
     return matchesAny(u, ALL_EXPS)
+}
+
+function isAllowedRedirect(u) {
+    try {
+        const target = new URL(u)
+        return target.protocol === 'https:' && REDIRECT_HOSTS.has(target.hostname.toLowerCase())
+    } catch (err) {
+        return false
+    }
 }
 
 /**
@@ -166,7 +185,9 @@ async function httpHandler(req, pathname, ctx) {
     }
 
     // 边缘缓存：仅缓存 GET 且无 Range 请求的成功响应（200/206）
-    if (req.method === 'GET' && !reqHdrRaw.has('range')) {
+    // Never share authenticated responses between users.
+    if (req.method === 'GET' && !reqHdrRaw.has('range') &&
+        !reqHdrRaw.has('authorization') && !reqHdrRaw.has('cookie')) {
         const cache = caches.default
         const cacheKey = new Request(urlObj.href)
         const cached = await cache.match(cacheKey)
@@ -174,7 +195,7 @@ async function httpHandler(req, pathname, ctx) {
             return cached
         }
         const res = await proxy(urlObj, reqInit)
-        if (res.status === 200 || res.status === 206) {
+        if ((res.status === 200 || res.status === 206) && !res.headers.has('set-cookie')) {
             const copy = res.clone()
             copy.headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=86400')
             if (ctx && ctx.waitUntil) {
@@ -203,11 +224,12 @@ async function proxy(urlObj, reqInit) {
 
     if (resHdrNew.has('location')) {
         let _location = resHdrNew.get('location')
-        if (checkUrl(_location))
-            resHdrNew.set('location', PREFIX + _location)
-        else {
+        const redirectUrl = new URL(_location, urlObj.href).href
+        if (checkUrl(redirectUrl)) {
+            resHdrNew.set('location', PREFIX + redirectUrl)
+        } else if (isAllowedRedirect(redirectUrl)) {
             reqInit.redirect = 'follow'
-            return proxy(newUrl(_location), reqInit)
+            return proxy(newUrl(redirectUrl), reqInit)
         }
     }
     resHdrNew.set('access-control-expose-headers', '*')
@@ -228,7 +250,7 @@ export default {
         try {
             return await fetchHandler(request, ctx)
         } catch (err) {
-            return makeRes('cfworker error:\n' + err.stack, 502)
+            return makeRes('Upstream request failed', 502)
         }
     }
 }
