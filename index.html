@@ -62,7 +62,7 @@
 
     .hero { max-width: none; }
     .eyebrow { margin: 0 0 14px; color: var(--accent-dark); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { max-width: 680px; margin: 0; font-size: 52px; line-height: 1.04; letter-spacing: 0; }
+    h1 { max-width: none; margin: 0; font-size: 48px; line-height: 1.04; letter-spacing: 0; white-space: nowrap; }
     .desc { max-width: 620px; margin: 14px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
 
     .tool { margin-top: 24px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
@@ -82,7 +82,7 @@
     .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 38px 0 12px; }
     .section-head h2 { margin: 0; font-size: 18px; }
     .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
-    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .card { min-width: 0; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
     .card h3 { margin: 0 0 9px; font-size: 14px; }
     .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
@@ -101,7 +101,7 @@
     @media (max-width: 720px) {
       .wrap { width: min(100% - 28px, 560px); padding-top: 20px; }
       .topbar { margin-bottom: 52px; }
-      h1 { font-size: 42px; }
+      h1 { font-size: 42px; white-space: normal; }
       .status { font-size: 0; }
       .status-dot { margin-right: 2px; }
       form { grid-template-columns: 1fr; }
